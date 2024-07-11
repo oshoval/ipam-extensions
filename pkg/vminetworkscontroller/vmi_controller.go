@@ -8,6 +8,8 @@ import (
 
 	"github.com/go-logr/logr"
 
+	"k8s.io/utils/ptr"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -67,10 +69,24 @@ func (r *VirtualMachineInstanceReconciler) Reconcile(
 	if err := r.Client.Get(contextWithTimeout, request.NamespacedName, vm); apierrors.IsNotFound(err) {
 		r.Log.Info("Corresponding VM not found", "vm", request.NamespacedName)
 		if vmi != nil {
-			ownerInfo = metav1.OwnerReference{APIVersion: vmi.APIVersion, Kind: vmi.Kind, Name: vmi.Name, UID: vmi.UID}
+			ownerInfo = metav1.OwnerReference{
+				APIVersion:         vmi.APIVersion,
+				Kind:               vmi.Kind,
+				Name:               vmi.Name,
+				UID:                vmi.UID,
+				Controller:         ptr.To(true),
+				BlockOwnerDeletion: ptr.To(true),
+			}
 		}
 	} else if err == nil {
-		ownerInfo = metav1.OwnerReference{APIVersion: vm.APIVersion, Kind: vm.Kind, Name: vm.Name, UID: vm.UID}
+		ownerInfo = metav1.OwnerReference{
+			APIVersion:         vm.APIVersion,
+			Kind:               vm.Kind,
+			Name:               vm.Name,
+			UID:                vm.UID,
+			Controller:         ptr.To(true),
+			BlockOwnerDeletion: ptr.To(true),
+		}
 		hasVMOwner = true
 	} else {
 		return controllerruntime.Result{}, fmt.Errorf(

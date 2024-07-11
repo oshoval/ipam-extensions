@@ -14,6 +14,7 @@ import (
 	apitypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 
 	controllerruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -145,11 +146,15 @@ var _ = Describe("VMI IPAM controller", Serial, func() {
 			expectedIPAMClaims: []ipamclaimsapi.IPAMClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            fmt.Sprintf("%s.%s", vmName, "randomnet"),
-						Namespace:       namespace,
-						Finalizers:      []string{claims.KubevirtVMFinalizer},
-						Labels:          claims.OwnedByVMLabel(vmName),
-						OwnerReferences: []metav1.OwnerReference{{Name: vmName}},
+						Name:       fmt.Sprintf("%s.%s", vmName, "randomnet"),
+						Namespace:  namespace,
+						Finalizers: []string{claims.KubevirtVMFinalizer},
+						Labels:     claims.OwnedByVMLabel(vmName),
+						OwnerReferences: []metav1.OwnerReference{{
+							Name:               vmName,
+							Controller:         ptr.To(true),
+							BlockOwnerDeletion: ptr.To(true)},
+						},
 					},
 					Spec: ipamclaimsapi.IPAMClaimSpec{Network: "goodnet"},
 				},
@@ -288,11 +293,15 @@ var _ = Describe("VMI IPAM controller", Serial, func() {
 			expectedIPAMClaims: []ipamclaimsapi.IPAMClaim{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "vm1.randomnet",
-						Namespace:       "ns1",
-						Labels:          claims.OwnedByVMLabel(vmName),
-						Finalizers:      []string{claims.KubevirtVMFinalizer},
-						OwnerReferences: []metav1.OwnerReference{{Name: vmName}},
+						Name:       "vm1.randomnet",
+						Namespace:  "ns1",
+						Labels:     claims.OwnedByVMLabel(vmName),
+						Finalizers: []string{claims.KubevirtVMFinalizer},
+						OwnerReferences: []metav1.OwnerReference{{
+							Name:               vmName,
+							Controller:         ptr.To(true),
+							BlockOwnerDeletion: ptr.To(true)},
+						},
 					},
 					Spec: ipamclaimsapi.IPAMClaimSpec{Network: "goodnet"},
 				},
