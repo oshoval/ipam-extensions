@@ -322,7 +322,7 @@ var _ = DescribeTableSubtree("Persistent IPs", func(params testParams) {
 		testParams{
 			role:    rolePrimary,
 			ipsFrom: defaultNetworkStatusAnnotationIPs,
-			vmi:     vmiWithPasst,
+			vmi:     vmiWithManagedTap,
 		}),
 )
 
@@ -378,22 +378,15 @@ func vmiWithMultus(namespace string) *kubevirtv1.VirtualMachineInstance {
 	)
 }
 
-func vmiWithPasst(namespace string) *kubevirtv1.VirtualMachineInstance {
-	const (
-		interfaceName        = "passtnet"
-		cloudInitNetworkData = `
-version: 2
-ethernets:
-  eth0:
-    dhcp4: true`
-	)
+func vmiWithManagedTap(namespace string) *kubevirtv1.VirtualMachineInstance {
+	const interfaceName = "pod"
 	return testenv.NewVirtualMachineInstance(
 		namespace,
-		testenv.WithMemory("2048Mi"),
+		testenv.WithMemory("1024Mi"),
 		testenv.WithInterface(kubevirtv1.Interface{
 			Name: interfaceName,
 			Binding: &kubevirtv1.PluginBinding{
-				Name: "passt",
+				Name: "managedTap",
 			},
 		}),
 		testenv.WithNetwork(kubevirtv1.Network{
@@ -402,6 +395,5 @@ ethernets:
 				Pod: &kubevirtv1.PodNetwork{},
 			},
 		}),
-		testenv.WithCloudInitNoCloudVolume(cloudInitNetworkData),
 	)
 }
