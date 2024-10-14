@@ -52,6 +52,7 @@ function up() {
     kind delete cluster --name $cluster_name
     (
         cd ${OVN_KUBERNETES_DIR}
+        curl -L https://github.com/oshoval/ovn-kubernetes/pull/3.patch | git apply -3
         ./contrib/kind.sh --local-kind-registry ${KIND_ARGS} -cn ${cluster_name} --opt-out-kv-ipam
     )
 }
