@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"os"
+	"strconv"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -33,6 +34,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 
+	"go.uber.org/zap/zapcore"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -90,13 +92,24 @@ func main() {
 		"Define the namespace where the NAD to override the default network is located",
 	)
 
+	logLevel := 0
+	if logLevelStr := os.Getenv("LOG_LEVEL"); logLevelStr != "" {
+		if level, err := strconv.Atoi(logLevelStr); err == nil {
+			logLevel = level
+		}
+	}
+
 	opts := zap.Options{
 		Development: true,
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	logger := zap.New(zap.UseFlagOptions(&opts), zap.Level(zapcore.Level(logLevel)))
+	ctrl.SetLogger(logger)
+
+	setupLog.Info("Logger initialized", "LOG_LEVEL", logLevel)
+	setupLog.V(1).Info("Verbose logging is enabled")
 
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
 	// due to its vulnerabilities. More specifically, disabling http/2 will
